@@ -18,8 +18,17 @@ enum Token {
     Print,
     EOF,
     StringLiteral(String),
+    TypeConversion(TypeConversion),
 }
-
+#[derive(Debug, PartialEq)]
+enum TypeConversion {
+    IntToFloat,
+    FloatToInt,
+    StringToInt(String),
+    StringToFloat(String),
+    IntToString,
+    FloatToString,
+}
 struct Lexer {
     input: String,
     position: usize,
@@ -81,6 +90,86 @@ impl Lexer {
                     self.consume();
                     Token::Slash
                 }
+                // handling type conversions
+                b'i' => {
+                    if self.input[self.position..].starts_with("int") {
+                        self.position += 4; // Move position here
+                        let start = self.position;
+                        let token =
+                            if let Some(first_char) = self.input[self.position..].chars().next() {
+                                if first_char == '"' {
+                                    while let Some(c) = self.current_char() {
+                                        if c == b'"' {
+                                            self.consume();
+                                            break;
+                                        }
+                                        self.consume();
+                                    }
+                                    self.position += 1;
+                                    let input_str = &self.input[start+1..self.position+1 ];
+                                    self.position -=1;
+                                    Token::TypeConversion(TypeConversion::StringToInt(
+                                        input_str.to_string(),
+                                    ))
+                                } else if first_char.is_ascii_digit() {
+                                    Token::TypeConversion(TypeConversion::FloatToInt)
+                                } else {
+                                    println!("{}", first_char);
+                                    panic!("Unknown token: {}", first_char);
+                                }
+                            } else {
+                                panic!("Unexpected end of input");
+                            };
+                        token
+                    } else {
+                        panic!("Unknown token: {}", c as char);
+                    }
+                }
+
+                b'f' => {
+                    if self.input[self.position..].starts_with("float") {
+                        self.position += 6; //Move position here
+                        let start = self.position;
+                        let token =
+                            if let Some(first_char) = self.input[self.position..].chars().next() {
+                                if first_char == '"' {
+                                    while let Some(c) = self.current_char() {
+                                        if c == b'"' {
+                                            self.consume();
+                                            break;
+                                        }
+                                        self.consume();
+                                    }
+                                    self.position += 1;
+                                    let input_str = &self.input[start + 1..self.position - 1];
+                                    self.position -= 1;
+                                    Token::TypeConversion(TypeConversion::StringToFloat(
+                                        input_str.to_string(),
+                                    ))
+                                } else if first_char.is_ascii_digit() {
+                                    Token::TypeConversion(TypeConversion::IntToFloat)
+                                } else {
+                                    println!("{}", first_char);
+                                    panic!("Unknown token: {}", first_char);
+                                }
+                            } else {
+                                panic!("Unexpected end of input");
+                            };
+                        token
+                    } else {
+                        panic!("Unknown token: {}", c as char);
+                    }
+                }
+
+                b's' => {
+                    if self.input[self.position..].starts_with("str") {
+                        self.position += 3;
+                        Token::TypeConversion(TypeConversion::IntToString)
+                    } else {
+                        panic!("Unknown token: {}", c as char);
+                    }
+                }
+
                 // handling print statement
                 b'p' => {
                     if self.input[self.position..].starts_with("print") {
@@ -103,14 +192,21 @@ impl Lexer {
                 }
                 // handling new line
                 b'\n' => {
-                    self.consume();
+                    while let Some(c) = self.current_char() {
+                        if c == b'\n' {
+                            self.consume();
+                        } else {
+                            break;
+                        }
+                    }
                     self.next_token()
                 }
+
                 //escape characters
                 b'\\' => {
                     self.consume();
                     self.next_token()
-                } 
+                }
 
                 // handling multi line comments
                 b'"' => {
@@ -137,13 +233,15 @@ impl Lexer {
                             }
                             self.consume();
                         }
-                        self.position += end;
-                        Token::StringLiteral(self.input[start..self.position].to_string())
+                        self.position += end + 2;
+                        let input = &self.input[start + 1..self.position - 2].to_string();
 
+                        Token::StringLiteral(input.to_string())
                     } else {
                         panic!("Unknown token: {}", c as char);
                     }
                 }
+                // adding type conversions
 
                 //handing variables
                 _ => {
