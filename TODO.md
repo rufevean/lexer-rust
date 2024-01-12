@@ -9,6 +9,7 @@
 - add type conversions for variables 
 - add for lists
 - either ignore both paren,or output them,shouldnt be only one  
+- Symbol table [?]
 - Write a article for every week of work
 - add for multiple line comments [D]
 - add for comments [D]

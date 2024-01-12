@@ -105,9 +105,7 @@ impl Lexer {
                                         }
                                         self.consume();
                                     }
-                                    self.position += 1;
-                                    let input_str = &self.input[start+1..self.position+1 ];
-                                    self.position -=1;
+                                    let input_str = &self.input[start + 1..self.position + 1];
                                     Token::TypeConversion(TypeConversion::StringToInt(
                                         input_str.to_string(),
                                     ))
@@ -140,9 +138,9 @@ impl Lexer {
                                         }
                                         self.consume();
                                     }
-                                    self.position += 1;
-                                    let input_str = &self.input[start + 1..self.position - 1];
-                                    self.position -= 1;
+                                    let input_str = &self.input[start + 1..self.position + 1];
+                                    println!("{}", input_str);
+
                                     Token::TypeConversion(TypeConversion::StringToFloat(
                                         input_str.to_string(),
                                     ))
